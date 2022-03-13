@@ -1,0 +1,15 @@
+[user]
+    name  = Jon Perry
+    email = yrrepnoj@gmail.com
+
+[alias]
+    com  = commit
+    di   = diff
+    st   = status
+    stat = status
+
+[push]
+    default = simple
+
+[commit]
+    template = ~/.gitCommitTemplate
