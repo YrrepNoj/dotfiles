@@ -1,0 +1,34 @@
+; [column]
+    ; ui = auto
+[branch]
+    sort = -committerdate
+[branch]
+    sort = version:refname
+[diff]
+        algorithm = histogram
+        colorMoved = plain
+        mnemonicPrefix = true
+        renames = true
+[push]
+        default = simple
+        autoSetupRemote = true
+[fetch]
+        prune = true
+        pruneTags = true
+        all = true
+[help]
+        autocorrect = prompt
+[commit]
+    verbose = true
+[pull]
+    rebase = true
+[core]
+    editor = vim
+[user]
+	name = Jon Perry
+	; signingkey = "path/to/signingkey.pub" 
+	email = yrrepnoj@gmail.com
+; [gpg]
+; 	format = ssh
+; [commit]
+; 	gpgsign = true
