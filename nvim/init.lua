@@ -38,3 +38,4 @@ vim.keymap.set('n', '<C-M-j>', ':resize +5<CR>', { noremap = true, silent = true
 vim.keymap.set('n', '<C-M-k>', ':resize -5<CR>', { noremap = true, silent = true })          -- Move border up
 
 -- require('dap-go').setup()
+vim.opt.clipboard = "unnamedplus"
