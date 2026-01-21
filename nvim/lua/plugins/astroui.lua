@@ -10,8 +10,8 @@ return {
       init = { -- this table overrides highlights in all themes
         -- Normal = { bg = "#000000" },
         ColorColumn = {
-          bg = "#222222"
-        }
+          bg = "#222222",
+        },
       },
       astrotheme = { -- a table of overrides/changes when applying the astrotheme theme
         -- Normal = { bg = "#000000" },
@@ -33,3 +33,12 @@ return {
     },
   },
 }
+
+-- highlights = {
+--     init = { -- this table overrides highlights in all themes
+--       -- Normal = { bg = "#000000" },
+--     },
+--     astrodark = { -- a table of overrides/changes when applying the astrotheme theme
+--       -- Normal = { bg = "#000000" },
+--     },
+--   }
