@@ -1,0 +1,47 @@
+{
+  "includeCoAuthoredBy": false,
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '\"\\(.tool_input.command) - \\(.tool_input.description // \"No description\")\"' >> ~/.claude/bash-command-log.txt"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/notify.sh"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest":[
+      {
+        "matcher": "",
+        "hooks":[
+          {
+            "type": "command",
+            "command": "terminal-notifier -title \"Claude Code Reqruires Permissions\" -message \"permissions requested\" -sound \"bottle\""
+          }
+        ]
+      }
+    ]
+  },
+  "companyAnnouncements": [
+    "Hello nerd",
+    "Do something with your life",
+    "uggh this guy",
+    "try harder",
+    "oh, you again.",
+    "bro thinks he's a 10x developer",
+    "he 100% googles 'how to exit vim' weekly"
+  ]
+}
