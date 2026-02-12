@@ -109,9 +109,16 @@ automatically-unhide-macos-hidden-apps = false
     alt-7 = 'workspace 7'
     alt-8 = 'workspace 8'
     alt-9 = 'workspace 9'
-    alt-a = 'workspace A' # In your config, you can drop workspace bindings that you don't need
-    alt-b = 'workspace B'
-    alt-c = 'workspace C'
+
+
+    # Open apps...
+    alt-enter = 'exec-and-forget open -a "iTerm"'
+    alt-s = 'exec-and-forget open -a "Slack"'
+    alt-c = 'exec-and-forget open -a "Google Chrome"'
+    alt-g = 'exec-and-forget open -a "Gather"'
+    alt-n = 'exec-and-forget open -a "Notion"'
+    alt-o = 'exec-and-forget open -a "Obsidian"'
+    alt-a = 'exec-and-forget open -a "Claude"'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands#move-node-to-workspace
     alt-shift-1 = 'move-node-to-workspace 1'
@@ -123,9 +130,6 @@ automatically-unhide-macos-hidden-apps = false
     alt-shift-7 = 'move-node-to-workspace 7'
     alt-shift-8 = 'move-node-to-workspace 8'
     alt-shift-9 = 'move-node-to-workspace 9'
-    alt-shift-a = 'move-node-to-workspace A'
-    alt-shift-b = 'move-node-to-workspace B'
-    alt-shift-c = 'move-node-to-workspace C'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands#workspace-back-and-forth
     alt-tab = 'workspace-back-and-forth'
