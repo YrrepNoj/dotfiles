@@ -9,7 +9,15 @@ after-login-command = []
 # You can use it to add commands that run after AeroSpace startup.
 # 'after-startup-command' is run after 'after-login-command'
 # Available commands : https://nikitabobko.github.io/AeroSpace/commands
-after-startup-command = []
+after-startup-command = [
+    'workspace 9',
+    'move-workspace-to-monitor --wrap-around next',
+    'workspace 8',
+    'move-workspace-to-monitor --wrap-around next',
+    'workspace 7',
+    'move-workspace-to-monitor --wrap-around next',
+    'workspace 1'
+]
 
 # Start AeroSpace at login
 start-at-login = true
@@ -58,24 +66,7 @@ automatically-unhide-macos-hidden-apps = false
 
 # 'main' binding mode declaration
 [mode.main.binding]
-    # TODO: fullscreen over the current node in the tree instead of ALL the screen?
     alt-shift-f = 'fullscreen'
-
-    # TODO: Close the current application
-
-
-   # All possible commands: https://nikitabobko.github.io/AeroSpace/commands
-
-    # TODO: Keybindings to auto move to app 
-    # See: https://nikitabobko.github.io/AeroSpace/commands#exec-and-forget
-    # You can uncomment the following lines to open up terminal with alt + enter shortcut
-    # (like in i3)
-    # alt-enter = '''exec-and-forget osascript -e '
-    # tell application "Terminal"
-    #     do script
-    #     activate
-    # end tell'
-    # '''
 
     # See: https://nikitabobko.github.io/AeroSpace/commands#layout
     alt-slash = 'layout tiles horizontal vertical'
@@ -92,6 +83,15 @@ automatically-unhide-macos-hidden-apps = false
     alt-shift-j = 'move down'
     alt-shift-k = 'move up'
     alt-shift-l = 'move right'
+
+    #####
+    # multi monitor support
+    #####
+    alt-ctrl-h = 'focus-monitor prev'
+    alt-ctrl-l = 'focus-monitor next'
+
+    alt-shift-ctrl-h = 'move-node-to-monitor prev'
+    alt-shift-ctrl-l = 'move-node-to-monitor next'
 
     # See: https://nikitabobko.github.io/AeroSpace/commands#resize
     # TODO: I would like more control over resizing 
@@ -110,15 +110,16 @@ automatically-unhide-macos-hidden-apps = false
     alt-8 = 'workspace 8'
     alt-9 = 'workspace 9'
 
-
-    # Open apps...
+    # Focus apps by keybind
     alt-enter = 'exec-and-forget open -a "iTerm"'
-    alt-s = 'exec-and-forget open -a "Slack"'
     alt-c = 'exec-and-forget open -a "Google Chrome"'
-    alt-g = 'exec-and-forget open -a "Gather"'
-    alt-n = 'exec-and-forget open -a "Notion"'
     alt-o = 'exec-and-forget open -a "Obsidian"'
-    alt-a = 'exec-and-forget open -a "Claude"'
+    alt-t = 'exec-and-forget open -a "Linear"'
+    alt-d = 'exec-and-forget open -a "Discord"'
+    alt-i = 'exec-and-forget open -a "Messages"'
+    alt-s = 'exec-and-forget open -a "Slack"'
+    alt-f = 'exec-and-forget open -a "Firefox"'
+
 
 # See: https://nikitabobko.github.io/AeroSpace/commands#move-node-to-workspace
     alt-shift-1 = 'move-node-to-workspace 1'
@@ -165,4 +166,9 @@ automatically-unhide-macos-hidden-apps = false
 if.app-id = 'com.googlecode.iterm2'
 run = "move-node-to-workspace 1"
 
-
+# Float only Handy's recording overlay window
+[[on-window-detected]]
+if.app-name-regex-substring = 'handy'
+if.window-title-regex-substring = '^recording$'
+run = 'layout floating'
+check-further-callbacks = false
