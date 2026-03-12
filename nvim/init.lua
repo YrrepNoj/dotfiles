@@ -31,6 +31,7 @@ vim.keymap.set("n", "<C-M-h>", ":vertical resize +5<CR>", { noremap = true, sile
 vim.keymap.set("n", "<C-M-l>", ":vertical resize -5<CR>", { noremap = true, silent = true }) -- Move border right
 vim.keymap.set("n", "<C-M-j>", ":resize +5<CR>", { noremap = true, silent = true }) -- Move border down
 vim.keymap.set("n", "<C-M-k>", ":resize -5<CR>", { noremap = true, silent = true }) -- Move border up
+vim.keymap.set("i", "jk", "<Esc>", { noremap = true, silent = true })
 
 -- require('dap-go').setup()
 vim.opt.clipboard = "unnamedplus"
