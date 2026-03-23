@@ -44,7 +44,24 @@ if git -C "$cwd" rev-parse --git-dir > /dev/null 2>&1; then
     [ "$untracked" -gt 0 ] && git_status="${git_status}$(printf '%b' "$COLOR_LIMIT_WARN")?${untracked}$(printf '%b' "$COLOR_RESET")"
     [ -n "$git_status" ] && git_status=" [${git_status}]"
     git_branch=" $branch"
-    git_segment="$git_status"
+
+    # PR hyperlinks — find open PRs for this branch
+    pr_segment=""
+    if command -v gh > /dev/null 2>&1; then
+      pr_json=$(gh pr list --head "$branch" --json number,url 2>/dev/null)
+      if [ -n "$pr_json" ] && [ "$(echo "$pr_json" | jq 'length')" -gt 0 ]; then
+        pr_links=""
+        while IFS= read -r line; do
+          pr_num=$(echo "$line" | jq -r '.number')
+          pr_url=$(echo "$line" | jq -r '.url')
+          link="\033]8;;${pr_url}\a#${pr_num}\033]8;;\a"
+          pr_links="${pr_links:+${pr_links}, }${link}"
+        done < <(echo "$pr_json" | jq -c '.[]')
+        pr_segment=" [${pr_links}]"
+      fi
+    fi
+
+    git_segment="${pr_segment}${git_status}"
   fi
 fi
 
