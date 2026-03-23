@@ -1,5 +1,33 @@
 {
   "includeCoAuthoredBy": false,
+  "permissions": {
+    "allow": [
+      "Bash(make build)",
+      "Bash(make test)",
+      "Bash(make lint)",
+      "Bash(go mod *)",
+      "Bash(go build *)",
+      "Bash(grep *)",
+      "Bash(find *)",
+      "Bash(ls *)",
+      "Bash(kubectl get *)",
+      "Bash(kubectl describe *)",
+      "Bash(kubectl logs *)",
+      "Bash(which *)",
+      "Bash(nvidia-smi *)",
+      "Bash(k3d cluster list)",
+      "Bash(git show *)",
+      "Bash(git diff *)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./env/.*)",
+      "Read(./secrets/**)",
+      "Bash(make publish)",
+      "Bash(make release)"
+    ],
+    "ask": []
+  },
   "hooks": {
     "PreToolUse": [
       {
@@ -23,18 +51,27 @@
         ]
       }
     ],
-    "PermissionRequest":[
+    "PermissionRequest": [
       {
         "matcher": "",
-        "hooks":[
+        "hooks": [
           {
             "type": "command",
-            "command": "terminal-notifier -title \"Claude Code Reqruires Permissions\" -message \"permissions requested\" -sound \"bottle\""
+            "command": "~/.claude/notify.sh --mode permission"
           }
         ]
       }
     ]
   },
+  "enabledPlugins": {},
+  "sandbox": {
+    "enabled": true
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash ~/.claude/statusline-command.sh"
+  },
+  "alwaysThinkingEnabled": false,
   "companyAnnouncements": [
     "Hello nerd",
     "Do something with your life",
