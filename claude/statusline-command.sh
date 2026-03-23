@@ -148,10 +148,13 @@ _time_until() {
   if [ "$remaining" -le 0 ]; then
     echo "0m"
   else
-    local h m
-    h=$((remaining / 3600))
+    local d h m
+    d=$((remaining / 86400))
+    h=$(((remaining % 86400) / 3600))
     m=$(((remaining % 3600) / 60))
-    if [ "$h" -gt 0 ]; then
+    if [ "$d" -gt 0 ]; then
+      echo "${d}d${h}h${m}m"
+    elif [ "$h" -gt 0 ]; then
       echo "${h}h${m}m"
     else
       echo "${m}m"
