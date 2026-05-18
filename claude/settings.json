@@ -17,7 +17,9 @@
       "Bash(nvidia-smi *)",
       "Bash(k3d cluster list)",
       "Bash(git show *)",
-      "Bash(git diff *)"
+      "Bash(git diff *)",
+      "Bash(pnpm tsc *)",
+      "Bash(uv tree *)"
     ],
     "deny": [
       "Read(./.env)",
@@ -71,7 +73,11 @@
     "type": "command",
     "command": "bash ~/.claude/statusline-command.sh"
   },
-  "alwaysThinkingEnabled": false,
+  "enabledPlugins": {
+    "gopls-lsp@claude-plugins-official": true,
+    "context7@claude-plugins-official": true
+  },
+  "alwaysThinkingEnabled": true,
   "companyAnnouncements": [
     "Hello nerd",
     "Do something with your life",
