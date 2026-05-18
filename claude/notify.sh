@@ -58,7 +58,15 @@ if [ -n "$TMUX" ]; then
 fi
 
 # Send the notification
-terminal-notifier \
-  -title "$TITLE" \
-  -message "$MESSAGE" \
-  -sound "$SOUND"
+if [ -n "$CLAUDE_CODE_NOTIFY_URL" ]; then
+  PAYLOAD=$(jq -n --arg title "$TITLE" --arg message "$MESSAGE" \
+    '{"embeds": [{"title": $title, "description": $message}]}')
+  curl -s -X POST "$CLAUDE_CODE_NOTIFY_URL" \
+    -H "Content-Type: application/json" \
+    -d "$PAYLOAD" > /dev/null
+else
+  terminal-notifier \
+    -title "$TITLE" \
+    -message "$MESSAGE" \
+    -sound "$SOUND"
+fi
