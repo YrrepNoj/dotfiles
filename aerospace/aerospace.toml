@@ -119,6 +119,7 @@ automatically-unhide-macos-hidden-apps = false
     alt-i = 'exec-and-forget open -a "Messages"'
     alt-s = 'exec-and-forget open -a "Slack"'
     alt-f = 'exec-and-forget open -a "Firefox"'
+    alt-g = 'exec-and-forget open -a "Gather"'
 
 
 # See: https://nikitabobko.github.io/AeroSpace/commands#move-node-to-workspace
@@ -157,6 +158,28 @@ automatically-unhide-macos-hidden-apps = false
     alt-shift-j = ['join-with down', 'mode main']
     alt-shift-k = ['join-with up', 'mode main']
     alt-shift-l = ['join-with right', 'mode main']
+
+    # Move workspaces 7-9 to the secondary monitor (e.g. when plugging into docking station)
+    2 = [
+        'workspace 7', 'move-workspace-to-monitor --wrap-around next',
+        'workspace 8', 'move-workspace-to-monitor --wrap-around next',
+        'workspace 9', 'move-workspace-to-monitor --wrap-around next',
+        'workspace 1', 'mode main'
+    ]
+
+    # Move all workspaces to main monitor (e.g. when unplugging from docking station)
+    1 = [
+        'workspace 1', 'move-workspace-to-monitor main',
+        'workspace 2', 'move-workspace-to-monitor main',
+        'workspace 3', 'move-workspace-to-monitor main',
+        'workspace 4', 'move-workspace-to-monitor main',
+        'workspace 5', 'move-workspace-to-monitor main',
+        'workspace 6', 'move-workspace-to-monitor main',
+        'workspace 7', 'move-workspace-to-monitor main',
+        'workspace 8', 'move-workspace-to-monitor main',
+        'workspace 9', 'move-workspace-to-monitor main',
+        'workspace 1', 'mode main'
+    ]
 
     down = 'volume down'
     up = 'volume up'
