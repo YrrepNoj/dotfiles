@@ -112,8 +112,9 @@ automatically-unhide-macos-hidden-apps = false
 
     # Focus apps by keybind
     alt-enter = 'exec-and-forget open -a "iTerm"'
+    alt-shift-enter = 'exec-and-forget open -a "Ghostty"'
     alt-c = 'exec-and-forget open -a "Google Chrome"'
-    alt-o = 'exec-and-forget open -a "Obsidian"'
+    alt-shift-c = 'exec-and-forget open -a "Claude"'
     alt-t = 'exec-and-forget open -a "Linear"'
     alt-d = 'exec-and-forget open -a "Discord"'
     alt-i = 'exec-and-forget open -a "Messages"'
@@ -121,6 +122,8 @@ automatically-unhide-macos-hidden-apps = false
     alt-f = 'exec-and-forget open -a "Firefox"'
     alt-g = 'exec-and-forget open -a "Gather"'
 
+    alt-o = ['exec-and-forget open "obsidian://open?vault=allthenotes"', 'workspace 1']
+    alt-shift-o = ['exec-and-forget open "obsidian://open?vault=unicorn"', 'workspace 2']
 
 # See: https://nikitabobko.github.io/AeroSpace/commands#move-node-to-workspace
     alt-shift-1 = 'move-node-to-workspace 1'
@@ -195,3 +198,18 @@ if.app-name-regex-substring = 'handy'
 if.window-title-regex-substring = '^recording$'
 run = 'layout floating'
 check-further-callbacks = false
+
+
+[[on-window-detected]]
+if.app-id = "com.mitchellh.ghostty"
+run = ["layout tiling"]
+
+[[on-window-detected]]
+if.app-id = "md.obsidian"
+if.window-title-regex-substring = "unicorn"
+run = "move-node-to-workspace 2"
+
+[[on-window-detected]]
+if.app-id = "md.obsidian"
+if.window-title-regex-substring = "allthenotes"
+run = "move-node-to-workspace 1"
