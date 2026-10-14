@@ -1,0 +1,64 @@
+# --------------------------------------
+# Login-shell environment setup
+# Runs once per login (NOT every shell)
+# --------------------------------------
+
+# Make PATH an array and keep entries unique
+typeset -U path PATH
+
+# ---- User-local binaries (highest priority)
+
+# ---- Homebrew (Linuxbrew)
+if [[ -d /home/linuxbrew/.linuxbrew/bin ]]; then
+  path=(
+    /home/linuxbrew/.linuxbrew/bin
+    /home/linuxbrew/.linuxbrew/sbin
+    $path
+  )
+fi
+
+# ---- pyenv (base binaries; shims added later by pyenv init)
+export PYENV_ROOT="$HOME/.pyenv"
+if [[ -d "$PYENV_ROOT/bin" ]]; then
+  path=(
+    "$PYENV_ROOT/bin"
+    $path
+  )
+fi
+if [[ -d "$PYENV_ROOT/bin" ]]; then
+  path=(
+    "$PYENV_ROOT/shims"
+    $path
+  )
+fi
+
+# ---- Go
+export GOPATH="$HOME/go"
+if [[ -d "$GOPATH/bin" ]]; then
+  path=(
+    "$GOPATH/bin"
+    $path
+  )
+fi
+
+# ---- nvm (PATH for selected Node version comes from nvm.sh later)
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
+
+# ---- GPG
+export GPG_TTY=$TTY
+
+# ---- Custom env (only if it sets environment variables / PATH)
+if [[ -f "$HOME/.local/bin/env" ]]; then
+  . "$HOME/.local/bin/env"
+fi
+
+path=(
+  "$HOME/.local/bin"
+  $path
+)
+
+# Export final PATH
+export PATH
+
