@@ -1,0 +1,2 @@
+# Login-shell environment; also loaded by zshrc for non-login terminals.
+source "${${(%):-%N}:A:h}/env.zsh"

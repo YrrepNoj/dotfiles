@@ -1,0 +1,510 @@
+source "${${(%):-%N}:A:h}/env.zsh"
+
+# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
+# Initialization code that may require console input (password prompts, [y/n]
+# confirmations, etc.) must go above this block; everything else may go below.
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
+# Path to your oh-my-zsh installation.
+export ZSH="${ZSH:-$HOME/.oh-my-zsh}"
+
+# Set name of the theme to load --- if set to "random", it will
+# load a random theme each time oh-my-zsh is loaded, in which case,
+# to know which specific one was loaded, run: echo $RANDOM_THEME
+# See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
+ZSH_THEME=""
+if [[ -f "${ZSH_CUSTOM:-$ZSH/custom}/themes/powerlevel10k/powerlevel10k.zsh-theme" ]]; then
+  ZSH_THEME="powerlevel10k/powerlevel10k"
+fi
+
+
+# Which plugins would you like to load?
+# Standard plugins can be found in $ZSH/plugins/
+# Custom plugins may be added to $ZSH_CUSTOM/plugins/
+# Example format: plugins=(rails git textmate ruby lighthouse)
+# Add wisely, as too many plugins slow down shell startup.
+plugins=(git)
+for _dotfiles_plugin in zsh-autosuggestions zsh-syntax-highlighting; do
+  if [[ -d "${ZSH_CUSTOM:-$ZSH/custom}/plugins/$_dotfiles_plugin" || -d "$ZSH/plugins/$_dotfiles_plugin" ]]; then
+    plugins+=("$_dotfiles_plugin")
+  fi
+done
+unset _dotfiles_plugin
+
+
+# User configuration
+if [[ -f "$ZSH/oh-my-zsh.sh" ]]; then
+  source "$ZSH/oh-my-zsh.sh"
+else
+  autoload -Uz compinit
+  compinit
+fi
+
+# Load nvm in non-login interactive terminals too.
+_dotfiles_nvm_script="$NVM_DIR/nvm.sh"
+if [[ ! -s "$_dotfiles_nvm_script" && -n "$HOMEBREW_PREFIX" ]]; then
+  _dotfiles_nvm_script="$HOMEBREW_PREFIX/opt/nvm/nvm.sh"
+fi
+[[ ! -s "$_dotfiles_nvm_script" ]] || source "$_dotfiles_nvm_script"
+unset _dotfiles_nvm_script
+
+if command -v pyenv >/dev/null 2>&1; then
+  eval "$(pyenv init - zsh)"
+fi
+
+if command -v kubectl >/dev/null 2>&1; then
+  source <(kubectl completion zsh)
+fi
+
+[[ ! -n "$TTY" ]] || export GPG_TTY="$TTY"
+
+
+
+# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+# export PYENV_ROOT="$HOME/.pyenv"
+# [[ -d $PYENV_ROOT/bin ]] && export PATH="$PATH:$PYENV_ROOT/bin"
+# eval "$(pyenv init -)"
+#
+
+
+alias k='kubectl'
+alias kgpa='kubectl get pods -A'
+alias kgp='kubectl get pods'
+alias kge='kubectl get events'
+alias kghr='kubectl get hr'
+alias kgs='kubectl get services'
+alias kdc='kind delete cluster && kind create cluster'
+
+watchEvents() {
+  watch -n 0.5 "kubectl get events -n $1 --sort-by='.metadata.creationTimestamp' | tail -32"
+}
+alias kwe=watchEvents
+
+fluxSync() {
+  flux suspend hr "$@"; sleep 5; flux resume hr "$@"
+}
+alias kfs=fluxSync
+
+
+alias dka='docker ps -aq | xargs docker stop | xargs docker rm'
+
+
+
+# Personal Utilitiy Functions
+grepGoFiles(){
+    if [ "$#" -ne 2 ]; then
+        GREPPATH="."
+    else
+        GREPPATH="$2"
+    fi
+    grep -rnsiI "$1" --include="*.go" "$GREPPATH"
+}
+
+grepYamlFiles(){
+    if [ "$#" -ne 2 ]; then
+        GREPPATH="."
+    else
+        GREPPATH="$2"
+    fi
+    grep -rnsiI "$1" --include="*.yaml" --include="*.yml" "$GREPPATH"
+}
+
+grepGoAndYamlFiles(){
+    if [ "$#" -ne 2 ]; then
+        GREPPATH="."
+    else
+        GREPPATH="$2"
+    fi
+    grep -rnsiI "$1" --include="*.go" --include="*.yaml" "$GREPPATH"
+}
+
+grepMarkdownFiles(){
+    if [ "$#" -ne 2 ]; then
+        GREPPATH="."
+    else
+        GREPPATH="$2"
+    fi
+    grep -rnsiI "$1" --include="*.md" --include="*.mdx" "$GREPPATH"
+}
+
+grepPythonFiles(){
+    if [ "$#" -ne 2 ]; then
+        GREPPATH="."
+    else
+        GREPPATH="$2"
+    fi
+    grep -rnsiI "$1" --include="*.py" --include="*.ipynb" "$GREPPATH"
+}
+
+findFiles(){
+    if [ "$#" -ne 2 ]; then
+        FINDPATH="."
+    else
+        FINDPATH="$2"
+    fi
+    find "$FINDPATH" -iname "$1"
+}
+
+
+grepHistory(){
+    history | grep "$1"
+}
+
+alias gg=grepGoFiles
+alias gy=grepYamlFiles
+alias ggy=grepGoAndYamlFiles
+alias gm=grepMarkdownFiles
+alias hg=grepHistory
+alias gp=grepPythonFiles
+alias ff=findFiles
+alias projects='cd "$HOME/projects"'
+alias proj=projects
+alias vim=nvim
+# alias vi=nvim
+alias notify='echo -en "\007"'
+alias notify3='notify && sleep 1 && notify && sleep 1 && notify'
+alias notify6='notify3 && notify3'
+
+alias describe-gpu-node="kubectl describe nodes  |  tr -d '\000' | sed -n -e '/^Name/,/Roles/p' -e '/^Capacity/,/Allocatable/p' -e '/^Allocated resources/,/Events/p'  | grep -e Name  -e  nvidia.com  | perl -pe 's/\n//'  |  perl -pe 's/Name:/\n/g' | sed 's/nvidia.com\/gpu:\?//g'  | sed '1s/^/Node Available(GPUs)  Used(GPUs)/' | sed 's/$/ 0 0 0/'  | awk '{print \$1, \$2, \$3}'  | column -t"
+# This custom build is Linux-specific; expose it only when installed.
+if [[ "$OSTYPE" == linux* && -x "$HOME/projects/purgatory/llama-swap/build/llama-swap-linux-amd64" ]]; then
+  alias lllama-swap='"$HOME/projects/purgatory/llama-swap/build/llama-swap-linux-amd64"'
+fi
+
+# alias ttt="tmux new-session -A -s"
+ttt() {
+  if [ $# -eq 0 ]; then
+    tmux ls
+  else
+    if [ -n "$TMUX" ]; then
+      # This is a nested session to unset the TMUX var and change the styling to make it obvious that it's nested
+      TMUX= tmux new-session -A -s "$1" \; set status-style "bg=green" \; set status-fg black
+    else
+      tmux new-session -A -s "$1"
+    fi
+  fi
+}
+
+# alias dog="pygmentize -g -O linenos=1"
+dog() {
+  # If any argument is -l, enable line numbers
+  if [[ " $* " == *" -l "* ]]; then
+    # Remove -l from args and run with line numbers
+    local args=()
+    for arg in "$@"; do
+      [[ "$arg" != "-l" ]] && args+=("$arg")
+    done
+    pygmentize -g -O linenos=1 "${args[@]}"
+  else
+    pygmentize -g "$@"
+  fi
+}
+
+# if [ -n "$SSH_CONNECTION" ]; then
+#   export TERM=screen-256color
+# fi
+
+# ######
+# # Git worktree things
+# ######
+# alias gwt="git -C git worktree"
+# gut() {
+#   local repo
+#   local -a repos
+#
+#   if [[ -n "$1" && -d "$1" && ( "$1" == git || "$1" == *.git || -d "$1/.git" ) ]]; then
+#     repo="$1"
+#     shift
+#   else
+#     repo=$(git rev-parse --show-toplevel 2>/dev/null) || repo=""
+#
+#     if [[ -z "$repo" ]]; then
+#       repos=(git(N/) *.git(N/))
+#
+#       if (( ${#repos} == 0 )); then
+#         echo "gut: no git repository found in $PWD" >&2
+#         return 1
+#       elif (( ${#repos} > 1 )); then
+#         echo "gut: multiple candidate repositories found:" >&2
+#         printf '  %s\n' "${repos[@]}" >&2
+#         return 1
+#       fi
+#
+#       repo="$repos[1]"
+#     fi
+#   fi
+#
+#   git -C "$repo" "$@"
+# }
+# guta() {
+#   local branch="$1"
+#   local start="${2:-main}"
+#   local repo_root git_dir worktree_path is_bare
+#
+#   if [[ -z "$branch" ]]; then
+#     echo "usage: guta <branch> [start-point]" >&2
+#     return 1
+#   fi
+#
+#   repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || repo_root=""
+#
+#   if [[ -n "$repo_root" ]]; then
+#     # Normal clone or existing worktree
+#     local existing
+#     existing=$(git -C "$repo_root" worktree list --porcelain \
+#       | awk -v b="$branch" '/^worktree /{p=$2} /^branch refs\/heads\//{if($2=="refs/heads/"b) print p}')
+#     if [[ -n "$existing" ]]; then
+#       cd "$existing" || return
+#       return
+#     fi
+#     worktree_path="../$branch"
+#     if git -C "$repo_root" show-ref --verify --quiet "refs/heads/$branch"; then
+#       git -C "$repo_root" worktree add "$worktree_path" "$branch" || return
+#     else
+#       git -C "$repo_root" worktree add -b "$branch" "$worktree_path" "$start" || return
+#     fi
+#     cd "$worktree_path" || return
+#     return
+#   fi
+#
+#   # Bare-repo project-root layout: look for git/ or *.git
+#   local -a repos=(./git(N/) ./*.git(N/))
+#
+#   if (( ${#repos} == 0 )); then
+#     echo "guta: no git repository found in $PWD" >&2
+#     return 1
+#   elif (( ${#repos} > 1 )); then
+#     echo "guta: multiple candidate repositories found:" >&2
+#     printf '  %s\n' "${repos[@]}" >&2
+#     return 1
+#   fi
+#
+#   git_dir="${repos[1]}"
+#
+#   local existing
+#   existing=$(git -C "$git_dir" worktree list --porcelain \
+#     | awk -v b="$branch" '/^worktree /{p=$2} /^branch refs\/heads\//{if($2=="refs/heads/"b) print p}')
+#   if [[ -n "$existing" ]]; then
+#     cd "$existing" || return
+#     return
+#   fi
+#
+#   worktree_path="../$branch"
+#
+#   if git -C "$git_dir" show-ref --verify --quiet "refs/heads/$branch"; then
+#     git -C "$git_dir" worktree add "$worktree_path" "$branch" || return
+#   else
+#     git -C "$git_dir" worktree add -b "$branch" "$worktree_path" "$start" || return
+#   fi
+#   cd "$branch" || return
+# }
+gh-save-issue() {
+  gh issue view $1 --json title,body,comments,labels --template \
+    '# {{.title}}
+
+  tags: {{range .labels}}[{{.name}}] {{end}}
+
+{{.body}}
+
+---
+
+{{range .comments}}## @{{.author.login}}
+{{.body}}
+
+---
+{{end}}' > "GH-ISSUE-$1.md"
+}
+
+
+alias luds='"$HOME/projects/du/uds/uds-cli/build/uds"'
+alias luds2='"$HOME/projects/du/uds/uds-cli-v2/build/uds"'
+alias luds2-old='"$HOME/projects/du/uds/uds-cli-v2-deprecated/build/uds"'
+
+alias ccs-me="ccs --switch-to yrrepnoj@gmail.com"
+alias ccs-du="ccs --switch-to jon@defenseunicorns.com"
+
+# . "$HOME/.local/bin/env"
+#
+#
+#
+### Things for lima-vm
+export AI_SANDBOX_YAML="${AI_SANDBOX_YAML:-$HOME/projects/ellecon/work-automtaion/lima/ai-sandbox.yaml}"
+export AI_SANDBOX_BASE="${AI_SANDBOX_BASE:-ai-sandbox-base}"
+
+# Bake the golden image once. --mount-none suppresses the inherited ~ mount
+# from template:docker-rootful so $HOME is never exposed and nothing host-path
+# pollutes the clones. Stops it after so clones copy a cold, consistent disk.
+ai-sandbox-bake() {
+  local env_file="$(dirname "$AI_SANDBOX_YAML")/.env"
+  if [[ ! -f "$env_file" ]]; then
+    echo "ai-sandbox-bake: .env not found at $env_file" >&2
+    return 1
+  fi
+  source "$env_file"
+  if [[ -z "${CLAUDE_CODE_NOTIFY_URL:-}" ]]; then
+    echo "ai-sandbox-bake: CLAUDE_CODE_NOTIFY_URL not set in $env_file" >&2
+    return 1
+  fi
+  limactl start --name "$AI_SANDBOX_BASE" --mount-none \
+    --set ".param.CLAUDE_CODE_NOTIFY_URL = \"$CLAUDE_CODE_NOTIFY_URL\"" \
+    "$AI_SANDBOX_YAML" \
+    && limactl stop "$AI_SANDBOX_BASE" \
+    && echo "Golden image '$AI_SANDBOX_BASE' baked and stopped."
+}
+
+# Clone the golden image for the current dir. Instance name defaults to the
+# basename of $PWD (override with an arg). Mount is introduced ONLY here.
+# Fails fast if an instance with that name already exists.
+ai-sandbox-clone() {
+  local name="${1:-$(basename "$PWD")}"
+  local port
+  port=$(_ai_sandbox_free_port)
+  if limactl list -q | grep -qx "$name"; then
+    echo "ai-sandbox-clone: instance '$name' already exists." >&2
+    echo "  Reuse it:  limactl shell $name" >&2
+    echo "  Or remove: ai-sandbox-rm $name" >&2
+    return 1
+  fi
+  limactl clone --mount-only "$PWD:w" --start \
+    --set ".portForwards[0].hostPort = $port" \
+    "$AI_SANDBOX_BASE" "$name" \
+    && echo "Cloned '$name' with $PWD mounted writable. TTYD: http://localhost:$port"
+}
+
+# Convenience: clone (or reuse) for $PWD, then drop into a shell.
+ai-sandbox() {
+  local name="${1:-$(basename "$PWD")}"
+  limactl list -q | grep -qx "$name" || ai-sandbox-clone "$name" || return 1
+
+  limactl shell "$name"
+}
+
+ # Find the first TCP port >= 9001 not currently bound on the host.
+ _ai_sandbox_free_port() {
+   local port=9001
+   while lsof -iTCP:$port -sTCP:LISTEN -t &>/dev/null; do
+     (( port++ ))
+   done
+   echo $port
+ }
+
+# Emits "branch<TAB>path" lines to fzf, shows both columns, returns the path.
+_wt_pick() {
+  git rev-parse --is-inside-work-tree >/dev/null 2>&1 || {
+    echo "not inside a git repository" >&2
+    return 1
+  }
+  command -v fzf >/dev/null 2>&1 || {
+    echo "fzf not found — install it or use: git worktree list" >&2
+    return 1
+  }
+
+  local sel
+  sel=$(git worktree list --porcelain | awk '
+    function flush() {
+      if (path == "") return
+      label = (branch != "") ? branch \
+            : (bare ? "(bare)" : (det ? "(detached)" : "?"))
+      printf "%s\t%s\n", label, path
+    }
+    /^worktree / { flush(); path=$2; branch=""; det=0; bare=0; next }
+    /^branch /   { branch=$2; sub("refs/heads/", "", branch); next }
+    /^detached/  { det=1; next }
+    /^bare/      { bare=1; next }
+    END          { flush() }
+  ' | fzf --height=40% --reverse --delimiter='\t' --with-nth=1,2) || return 1
+
+  # strip the "branch<TAB>" prefix, leaving just the path
+  printf '%s\n' "${sel#*$'\t'}"
+}
+
+# --- wtl: list worktrees ----------------------------------------------------
+unalias gwtls 2>/dev/null
+gwtls() {
+  git worktree list "$@"
+}
+
+# --- wtcd: jump to a worktree ----------------------------------------------
+gwtcd() {
+  local dir
+  dir=$(_wt_pick) || return
+  [ -n "$dir" ] && cd "$dir"
+}
+
+# --- gwtrm: remove a worktree -----------------------------------------------
+# Keeps git's safety checks: refuses if the worktree has uncommitted changes.
+# Also refuses to remove the worktree you're currently standing in.
+unalias gwtrm 2>/dev/null
+gwtrm() {
+  local dir
+  dir=$(_wt_pick) || return
+  [ -n "$dir" ] || return
+
+  # block removal if PWD is the worktree root or anywhere inside it
+  case "$PWD/" in
+    "$dir"/*)
+      echo "wtrm: you're inside $dir — cd out first" >&2
+      return 1
+      ;;
+  esac
+
+  git worktree remove "$dir" && echo "removed $dir"
+}
+
+gwtadd() {
+  local do_cd=1 branch="" arg
+  for arg in "$@"; do
+    case "$arg" in
+      --no-cd|-n) do_cd=0 ;;
+      -*)         echo "gwtadd: unknown flag: $arg" >&2; return 1 ;;
+      *)          if [ -z "$branch" ]; then branch="$arg"
+                  else echo "gwtadd: too many arguments" >&2; return 1; fi ;;
+    esac
+  done
+  [ -n "$branch" ] || { echo "usage: gwtadd [--no-cd] <branch>" >&2; return 1; }
+
+  local dest=".worktrees/$branch"
+
+  git rev-parse --is-inside-work-tree >/dev/null 2>&1 || {
+    echo "gwtadd: not inside a git repository" >&2; return 1; }
+
+  if [ -e "$dest" ]; then
+    echo "gwtadd: path already exists: $dest" >&2; return 1
+  fi
+
+  # does the branch already exist locally?
+  local has_local=0
+  git show-ref --verify --quiet "refs/heads/$branch" && has_local=1
+
+  # if not local, look for a remote-tracking match (origin first)
+  local remote="" r
+  if [ "$has_local" -eq 0 ]; then
+    for r in origin $(git remote | grep -v '^origin$'); do
+      if git show-ref --verify --quiet "refs/remotes/$r/$branch"; then
+        remote="$r"; break
+      fi
+    done
+  fi
+
+  local rc
+  if [ "$has_local" -eq 1 ]; then
+    echo "gwtadd: existing local branch '$branch' -> $dest"
+    git worktree add "$dest" "$branch"; rc=$?
+  elif [ -n "$remote" ]; then
+    echo "gwtadd: new branch '$branch' tracking '$remote/$branch' -> $dest"
+    git worktree add --track -b "$branch" "$dest" "$remote/$branch"; rc=$?
+  else
+    echo "gwtadd: new branch '$branch' from HEAD -> $dest"
+    echo "        (if you meant an un-fetched remote branch, git fetch first)"
+    git worktree add -b "$branch" "$dest"; rc=$?
+  fi
+
+  if [ "$rc" -eq 0 ] && [ "$do_cd" -eq 1 ]; then
+    cd "$dest"
+  fi
+  return $rc
+}
