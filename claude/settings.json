@@ -65,10 +65,6 @@
       }
     ]
   },
-  "enabledPlugins": {},
-  "sandbox": {
-    "enabled": true
-  },
   "statusLine": {
     "type": "command",
     "command": "bash ~/.claude/statusline-command.sh"
@@ -76,6 +72,9 @@
   "enabledPlugins": {
     "gopls-lsp@claude-plugins-official": true,
     "context7@claude-plugins-official": true
+  },
+  "sandbox": {
+    "enabled": true
   },
   "alwaysThinkingEnabled": true,
   "companyAnnouncements": [
@@ -86,5 +85,7 @@
     "oh, you again.",
     "bro thinks he's a 10x developer",
     "he 100% googles 'how to exit vim' weekly"
-  ]
+  ],
+  "tui": "fullscreen",
+  "agentPushNotifEnabled": true
 }
