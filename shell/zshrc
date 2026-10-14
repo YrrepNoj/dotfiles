@@ -212,6 +212,8 @@ _ai_sandbox_free_port() {
 alias gtree="git log --graph --oneline --all --decorate --color --abbrev-commit"
 
 # Emits "branch<TAB>path" lines to fzf, shows both columns, returns the path.
+# Any args are joined into the initial fzf query, which stays editable; the
+# menu always appears so a selection must be confirmed.
 _wt_pick() {
   git rev-parse --is-inside-work-tree >/dev/null 2>&1 || {
     echo "not inside a git repository" >&2
@@ -230,48 +232,93 @@ _wt_pick() {
             : (bare ? "(bare)" : (det ? "(detached)" : "?"))
       printf "%s\t%s\n", label, path
     }
-    /^worktree / { flush(); path=$2; branch=""; det=0; bare=0; next }
+    /^worktree / { flush(); path=substr($0, 10); branch=""; det=0; bare=0; next }
     /^branch /   { branch=$2; sub("refs/heads/", "", branch); next }
     /^detached/  { det=1; next }
     /^bare/      { bare=1; next }
     END          { flush() }
-  ' | fzf --height=40% --reverse --delimiter='\t' --with-nth=1,2) || return 1
+  ' | fzf --height=40% --reverse --delimiter='\t' --with-nth=1,2 \
+          --query="$*")
+  [ -n "$sel" ] || return 1
 
   # strip the "branch<TAB>" prefix, leaving just the path
   printf '%s\n' "${sel#*$'\t'}"
 }
 
-# --- wtl: list worktrees ----------------------------------------------------
+# --- gwtls: list worktrees --------------------------------------------------
 unalias gwtls 2>/dev/null
 gwtls() {
   git worktree list "$@"
 }
 
-# --- wtcd: jump to a worktree ----------------------------------------------
+# --- gwtcd: jump to a worktree ----------------------------------------------
+# usage: gwtcd [filter...]
 gwtcd() {
   local dir
-  dir=$(_wt_pick) || return
+  dir=$(_wt_pick "$@") || return
   [ -n "$dir" ] && cd "$dir"
 }
 
+# --- gwtm: jump to the main worktree ----------------------------------------
+# git always lists the main worktree first.
+gwtm() {
+  local dir
+  dir=$(git worktree list --porcelain 2>/dev/null | awk '/^worktree /{print substr($0, 10); exit}')
+  [ -n "$dir" ] || { echo "gwtm: not inside a git repository" >&2; return 1; }
+  cd "$dir"
+}
+
 # --- gwtrm: remove a worktree -----------------------------------------------
-# Keeps git's safety checks: refuses if the worktree has uncommitted changes.
-# Also refuses to remove the worktree you're currently standing in.
+# usage: gwtrm [-f] [-b|-B] [filter...]
+#   -f  force removal (untracked/modified files, passed to git worktree remove)
+#   -b  also delete the worktree's branch (git branch -d, merged only)
+#   -B  also delete the worktree's branch (git branch -D, even if unmerged)
+# Refuses to remove the worktree you're currently standing in.
 unalias gwtrm 2>/dev/null
 gwtrm() {
+  local force=0 del_branch="" arg
+  local -a query
+  for arg in "$@"; do
+    case "$arg" in
+      -f|--force)  force=1 ;;
+      -b|--branch) del_branch=-d ;;
+      -B)          del_branch=-D ;;
+      -*)          echo "gwtrm: unknown flag: $arg" >&2; return 1 ;;
+      *)           query+=("$arg") ;;
+    esac
+  done
+
   local dir
-  dir=$(_wt_pick) || return
+  dir=$(_wt_pick "${query[@]}") || return
   [ -n "$dir" ] || return
 
   # block removal if PWD is the worktree root or anywhere inside it
   case "$PWD/" in
     "$dir"/*)
-      echo "wtrm: you're inside $dir — cd out first" >&2
+      echo "gwtrm: you're inside $dir — cd out first (gwtm)" >&2
       return 1
       ;;
   esac
 
-  git worktree remove "$dir" && echo "removed $dir"
+  local branch
+  branch=$(git -C "$dir" symbolic-ref --quiet --short HEAD 2>/dev/null)
+
+  local -a rm_args
+  [ "$force" -eq 1 ] && rm_args+=(--force)
+  if ! git worktree remove "${rm_args[@]}" "$dir"; then
+    [ "$force" -eq 0 ] && echo "gwtrm: retry with -f to force removal" >&2
+    return 1
+  fi
+  echo "removed $dir"
+
+  if [ -n "$del_branch" ]; then
+    if [ -z "$branch" ]; then
+      echo "gwtrm: worktree had no branch (detached); nothing to delete" >&2
+    elif ! git branch "$del_branch" "$branch"; then
+      [ "$del_branch" = -d ] && echo "gwtrm: use -B to delete the unmerged branch '$branch'" >&2
+      return 1
+    fi
+  fi
 }
 
 gwtadd() {
