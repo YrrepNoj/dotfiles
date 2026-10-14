@@ -12,7 +12,9 @@ Shell configuration supports macOS (Apple Silicon and Intel) and Linux. Link
 so interactive non-login terminals receive the same tool paths.
 
 Homebrew is detected from PATH or its standard platform locations. Optional
-Oh My Zsh plugins, Powerlevel10k, nvm, and pyenv load when installed. Go, pnpm,
+Oh My Zsh plugins, Powerlevel10k, nvm, and pyenv load when installed. Without
+Powerlevel10k, the prompt uses oh-my-posh with `ohmyposh/powerlevel10k_lean.omp.json`
+when `oh-my-posh` is installed, and falls back to `robbyrussell` otherwise. Go, pnpm,
 and pyenv settings honor existing environment overrides. Project aliases use
 `$HOME/projects`; Lima helpers require `limactl` and a local sandbox template
 (the path can be set with `AI_SANDBOX_YAML`). The custom Linux llama-swap alias

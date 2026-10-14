@@ -14,10 +14,27 @@ export ZSH="${ZSH:-$HOME/.oh-my-zsh}"
 # load a random theme each time oh-my-zsh is loaded, in which case,
 # to know which specific one was loaded, run: echo $RANDOM_THEME
 # See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
+#
+# Prompt selection, in order of preference:
+#   1. Powerlevel10k, when installed as an oh-my-zsh custom theme.
+#   2. oh-my-posh, when the binary is installed. It uses the config tracked in
+#      this repo (ohmyposh/), so every machine gets the same prompt without a
+#      copy in ~/.config. oh-my-posh draws the prompt itself, so ZSH_THEME is
+#      left empty to keep oh-my-zsh from setting one; it starts further down,
+#      after oh-my-zsh has loaded.
+#   3. robbyrussell, oh-my-zsh's default, so a machine with neither installed
+#      still has a usable prompt.
+#
+# ${(%):-%N} is the path of this file. :A resolves the ~/.zshrc symlink to the
+# repo copy, and :h:h climbs from shell/zshrc up to the repo root.
+_dotfiles_omp_config="${${(%):-%N}:A:h:h}/ohmyposh/powerlevel10k_lean.omp.json"
 ZSH_THEME=""
 if [[ -f "${ZSH_CUSTOM:-$ZSH/custom}/themes/powerlevel10k/powerlevel10k.zsh-theme" ]]; then
   ZSH_THEME="powerlevel10k/powerlevel10k"
+elif ! command -v oh-my-posh >/dev/null 2>&1 || [[ ! -f "$_dotfiles_omp_config" ]]; then
+  ZSH_THEME="robbyrussell"
 fi
+# An empty ZSH_THEME at this point means option 2, oh-my-posh.
 
 
 # Which plugins would you like to load?
@@ -49,6 +66,8 @@ if [[ ! -s "$_dotfiles_nvm_script" && -n "$HOMEBREW_PREFIX" ]]; then
 fi
 [[ ! -s "$_dotfiles_nvm_script" ]] || source "$_dotfiles_nvm_script"
 unset _dotfiles_nvm_script
+# Tab completion for nvm subcommands and installed versions.
+[[ ! -s "$NVM_DIR/bash_completion" ]] || source "$NVM_DIR/bash_completion"
 
 if command -v pyenv >/dev/null 2>&1; then
   eval "$(pyenv init - zsh)"
@@ -64,6 +83,13 @@ fi
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+# Start oh-my-posh when the prompt selection near the top picked it (empty
+# ZSH_THEME). It runs after oh-my-zsh and ~/.p10k.zsh so nothing replaces its prompt.
+if [[ -z "$ZSH_THEME" ]]; then
+  eval "$(oh-my-posh init zsh --config "$_dotfiles_omp_config")"
+fi
+unset _dotfiles_omp_config
 
 # export PYENV_ROOT="$HOME/.pyenv"
 # [[ -d $PYENV_ROOT/bin ]] && export PATH="$PATH:$PYENV_ROOT/bin"
@@ -170,6 +196,15 @@ alias notify3='notify && sleep 1 && notify && sleep 1 && notify'
 alias notify6='notify3 && notify3'
 
 alias describe-gpu-node="kubectl describe nodes  |  tr -d '\000' | sed -n -e '/^Name/,/Roles/p' -e '/^Capacity/,/Allocatable/p' -e '/^Allocated resources/,/Events/p'  | grep -e Name  -e  nvidia.com  | perl -pe 's/\n//'  |  perl -pe 's/Name:/\n/g' | sed 's/nvidia.com\/gpu:\?//g'  | sed '1s/^/Node Available(GPUs)  Used(GPUs)/' | sed 's/$/ 0 0 0/'  | awk '{print \$1, \$2, \$3}'  | column -t"
+alias kgpu=describe-gpu-node  # short name for the GPU node summary above
+alias gtree="git log --graph --oneline --all --decorate --color --abbrev-commit"
+
+# Wakes the "thrawn" machine over the network, sending to both of its MAC addresses.
+# Only defined where wakeonlan is installed.
+if command -v wakeonlan >/dev/null 2>&1; then
+  alias wakethrawn="wakeonlan 08:bf:b8:76:cb:97 && wakeonlan 08:bf:b8:76:cb:96"
+fi
+
 # This custom build is Linux-specific; expose it only when installed.
 if [[ "$OSTYPE" == linux* && -x "$HOME/projects/purgatory/llama-swap/build/llama-swap-linux-amd64" ]]; then
   alias lllama-swap='"$HOME/projects/purgatory/llama-swap/build/llama-swap-linux-amd64"'

@@ -40,6 +40,10 @@ for _dotfiles_bin in /usr/local/go/bin "$PYENV_ROOT/bin" "$PYENV_ROOT/shims" \
 done
 unset _dotfiles_bin
 
+# Postgres CLI (keg-only libpq) and macOS user-site Python scripts, if present.
+[[ -z "$HOMEBREW_PREFIX" || ! -d "$HOMEBREW_PREFIX/opt/libpq/bin" ]] || path=("$HOMEBREW_PREFIX/opt/libpq/bin" "${path[@]}")
+[[ "$OSTYPE" != darwin* || ! -d "$HOME/Library/Python/3.9/bin" ]] || path+=("$HOME/Library/Python/3.9/bin")
+
 if [[ -f "$HOME/.local/bin/env" ]]; then
   source "$HOME/.local/bin/env"
 fi
