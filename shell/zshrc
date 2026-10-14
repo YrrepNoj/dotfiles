@@ -36,7 +36,6 @@ elif ! command -v oh-my-posh >/dev/null 2>&1 || [[ ! -f "$_dotfiles_omp_config" 
 fi
 # An empty ZSH_THEME at this point means option 2, oh-my-posh.
 
-
 # Which plugins would you like to load?
 # Standard plugins can be found in $ZSH/plugins/
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
@@ -49,7 +48,6 @@ for _dotfiles_plugin in zsh-autosuggestions zsh-syntax-highlighting; do
   fi
 done
 unset _dotfiles_plugin
-
 
 # User configuration
 if [[ -f "$ZSH/oh-my-zsh.sh" ]]; then
@@ -79,8 +77,6 @@ fi
 
 [[ ! -n "$TTY" ]] || export GPG_TTY="$TTY"
 
-
-
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
@@ -91,112 +87,23 @@ if [[ -z "$ZSH_THEME" ]]; then
 fi
 unset _dotfiles_omp_config
 
-# export PYENV_ROOT="$HOME/.pyenv"
-# [[ -d $PYENV_ROOT/bin ]] && export PATH="$PATH:$PYENV_ROOT/bin"
-# eval "$(pyenv init -)"
-#
-
-
 alias k='kubectl'
 alias kgpa='kubectl get pods -A'
-alias kgp='kubectl get pods'
-alias kge='kubectl get events'
-alias kghr='kubectl get hr'
-alias kgs='kubectl get services'
-alias kdc='kind delete cluster && kind create cluster'
 
 watchEvents() {
   watch -n 0.5 "kubectl get events -n $1 --sort-by='.metadata.creationTimestamp' | tail -32"
 }
 alias kwe=watchEvents
 
-fluxSync() {
-  flux suspend hr "$@"; sleep 5; flux resume hr "$@"
-}
-alias kfs=fluxSync
-
-
 alias dka='docker ps -aq | xargs docker stop | xargs docker rm'
 
-
-
-# Personal Utilitiy Functions
-grepGoFiles(){
-    if [ "$#" -ne 2 ]; then
-        GREPPATH="."
-    else
-        GREPPATH="$2"
-    fi
-    grep -rnsiI "$1" --include="*.go" "$GREPPATH"
-}
-
-grepYamlFiles(){
-    if [ "$#" -ne 2 ]; then
-        GREPPATH="."
-    else
-        GREPPATH="$2"
-    fi
-    grep -rnsiI "$1" --include="*.yaml" --include="*.yml" "$GREPPATH"
-}
-
-grepGoAndYamlFiles(){
-    if [ "$#" -ne 2 ]; then
-        GREPPATH="."
-    else
-        GREPPATH="$2"
-    fi
-    grep -rnsiI "$1" --include="*.go" --include="*.yaml" "$GREPPATH"
-}
-
-grepMarkdownFiles(){
-    if [ "$#" -ne 2 ]; then
-        GREPPATH="."
-    else
-        GREPPATH="$2"
-    fi
-    grep -rnsiI "$1" --include="*.md" --include="*.mdx" "$GREPPATH"
-}
-
-grepPythonFiles(){
-    if [ "$#" -ne 2 ]; then
-        GREPPATH="."
-    else
-        GREPPATH="$2"
-    fi
-    grep -rnsiI "$1" --include="*.py" --include="*.ipynb" "$GREPPATH"
-}
-
-findFiles(){
-    if [ "$#" -ne 2 ]; then
-        FINDPATH="."
-    else
-        FINDPATH="$2"
-    fi
-    find "$FINDPATH" -iname "$1"
-}
-
-
-grepHistory(){
-    history | grep "$1"
-}
-
-alias gg=grepGoFiles
-alias gy=grepYamlFiles
-alias ggy=grepGoAndYamlFiles
-alias gm=grepMarkdownFiles
-alias hg=grepHistory
-alias gp=grepPythonFiles
-alias ff=findFiles
-alias projects='cd "$HOME/projects"'
-alias proj=projects
 alias vim=nvim
-# alias vi=nvim
+
 alias notify='echo -en "\007"'
 alias notify3='notify && sleep 1 && notify && sleep 1 && notify'
 alias notify6='notify3 && notify3'
 
-alias describe-gpu-node="kubectl describe nodes  |  tr -d '\000' | sed -n -e '/^Name/,/Roles/p' -e '/^Capacity/,/Allocatable/p' -e '/^Allocated resources/,/Events/p'  | grep -e Name  -e  nvidia.com  | perl -pe 's/\n//'  |  perl -pe 's/Name:/\n/g' | sed 's/nvidia.com\/gpu:\?//g'  | sed '1s/^/Node Available(GPUs)  Used(GPUs)/' | sed 's/$/ 0 0 0/'  | awk '{print \$1, \$2, \$3}'  | column -t"
-alias kgpu=describe-gpu-node  # short name for the GPU node summary above
+alias kgpu="kubectl describe nodes  |  tr -d '\000' | sed -n -e '/^Name/,/Roles/p' -e '/^Capacity/,/Allocatable/p' -e '/^Allocated resources/,/Events/p'  | grep -e Name  -e  nvidia.com  | perl -pe 's/\n//'  |  perl -pe 's/Name:/\n/g' | sed 's/nvidia.com\/gpu:\?//g'  | sed '1s/^/Node Available(GPUs)  Used(GPUs)/' | sed 's/$/ 0 0 0/'  | awk '{print \$1, \$2, \$3}'  | column -t"
 alias gtree="git log --graph --oneline --all --decorate --color --abbrev-commit"
 
 # Wakes the "thrawn" machine over the network, sending to both of its MAC addresses.
@@ -210,7 +117,6 @@ if [[ "$OSTYPE" == linux* && -x "$HOME/projects/purgatory/llama-swap/build/llama
   alias lllama-swap='"$HOME/projects/purgatory/llama-swap/build/llama-swap-linux-amd64"'
 fi
 
-# alias ttt="tmux new-session -A -s"
 ttt() {
   if [ $# -eq 0 ]; then
     tmux ls
@@ -224,7 +130,6 @@ ttt() {
   fi
 }
 
-# alias dog="pygmentize -g -O linenos=1"
 dog() {
   # If any argument is -l, enable line numbers
   if [[ " $* " == *" -l "* ]]; then
@@ -239,133 +144,6 @@ dog() {
   fi
 }
 
-# if [ -n "$SSH_CONNECTION" ]; then
-#   export TERM=screen-256color
-# fi
-
-# ######
-# # Git worktree things
-# ######
-# alias gwt="git -C git worktree"
-# gut() {
-#   local repo
-#   local -a repos
-#
-#   if [[ -n "$1" && -d "$1" && ( "$1" == git || "$1" == *.git || -d "$1/.git" ) ]]; then
-#     repo="$1"
-#     shift
-#   else
-#     repo=$(git rev-parse --show-toplevel 2>/dev/null) || repo=""
-#
-#     if [[ -z "$repo" ]]; then
-#       repos=(git(N/) *.git(N/))
-#
-#       if (( ${#repos} == 0 )); then
-#         echo "gut: no git repository found in $PWD" >&2
-#         return 1
-#       elif (( ${#repos} > 1 )); then
-#         echo "gut: multiple candidate repositories found:" >&2
-#         printf '  %s\n' "${repos[@]}" >&2
-#         return 1
-#       fi
-#
-#       repo="$repos[1]"
-#     fi
-#   fi
-#
-#   git -C "$repo" "$@"
-# }
-# guta() {
-#   local branch="$1"
-#   local start="${2:-main}"
-#   local repo_root git_dir worktree_path is_bare
-#
-#   if [[ -z "$branch" ]]; then
-#     echo "usage: guta <branch> [start-point]" >&2
-#     return 1
-#   fi
-#
-#   repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || repo_root=""
-#
-#   if [[ -n "$repo_root" ]]; then
-#     # Normal clone or existing worktree
-#     local existing
-#     existing=$(git -C "$repo_root" worktree list --porcelain \
-#       | awk -v b="$branch" '/^worktree /{p=$2} /^branch refs\/heads\//{if($2=="refs/heads/"b) print p}')
-#     if [[ -n "$existing" ]]; then
-#       cd "$existing" || return
-#       return
-#     fi
-#     worktree_path="../$branch"
-#     if git -C "$repo_root" show-ref --verify --quiet "refs/heads/$branch"; then
-#       git -C "$repo_root" worktree add "$worktree_path" "$branch" || return
-#     else
-#       git -C "$repo_root" worktree add -b "$branch" "$worktree_path" "$start" || return
-#     fi
-#     cd "$worktree_path" || return
-#     return
-#   fi
-#
-#   # Bare-repo project-root layout: look for git/ or *.git
-#   local -a repos=(./git(N/) ./*.git(N/))
-#
-#   if (( ${#repos} == 0 )); then
-#     echo "guta: no git repository found in $PWD" >&2
-#     return 1
-#   elif (( ${#repos} > 1 )); then
-#     echo "guta: multiple candidate repositories found:" >&2
-#     printf '  %s\n' "${repos[@]}" >&2
-#     return 1
-#   fi
-#
-#   git_dir="${repos[1]}"
-#
-#   local existing
-#   existing=$(git -C "$git_dir" worktree list --porcelain \
-#     | awk -v b="$branch" '/^worktree /{p=$2} /^branch refs\/heads\//{if($2=="refs/heads/"b) print p}')
-#   if [[ -n "$existing" ]]; then
-#     cd "$existing" || return
-#     return
-#   fi
-#
-#   worktree_path="../$branch"
-#
-#   if git -C "$git_dir" show-ref --verify --quiet "refs/heads/$branch"; then
-#     git -C "$git_dir" worktree add "$worktree_path" "$branch" || return
-#   else
-#     git -C "$git_dir" worktree add -b "$branch" "$worktree_path" "$start" || return
-#   fi
-#   cd "$branch" || return
-# }
-gh-save-issue() {
-  gh issue view $1 --json title,body,comments,labels --template \
-    '# {{.title}}
-
-  tags: {{range .labels}}[{{.name}}] {{end}}
-
-{{.body}}
-
----
-
-{{range .comments}}## @{{.author.login}}
-{{.body}}
-
----
-{{end}}' > "GH-ISSUE-$1.md"
-}
-
-
-alias luds='"$HOME/projects/du/uds/uds-cli/build/uds"'
-alias luds2='"$HOME/projects/du/uds/uds-cli-v2/build/uds"'
-alias luds2-old='"$HOME/projects/du/uds/uds-cli-v2-deprecated/build/uds"'
-
-alias ccs-me="ccs --switch-to yrrepnoj@gmail.com"
-alias ccs-du="ccs --switch-to jon@defenseunicorns.com"
-
-# . "$HOME/.local/bin/env"
-#
-#
-#
 ### Things for lima-vm
 export AI_SANDBOX_YAML="${AI_SANDBOX_YAML:-$HOME/projects/ellecon/work-automtaion/lima/ai-sandbox.yaml}"
 export AI_SANDBOX_BASE="${AI_SANDBOX_BASE:-ai-sandbox-base}"
@@ -418,14 +196,14 @@ ai-sandbox() {
   limactl shell "$name"
 }
 
- # Find the first TCP port >= 9001 not currently bound on the host.
- _ai_sandbox_free_port() {
-   local port=9001
-   while lsof -iTCP:$port -sTCP:LISTEN -t &>/dev/null; do
-     (( port++ ))
-   done
-   echo $port
- }
+# Find the first TCP port >= 9001 not currently bound on the host.
+_ai_sandbox_free_port() {
+  local port=9001
+  while lsof -iTCP:$port -sTCP:LISTEN -t &>/dev/null; do
+    (( port++ ))
+  done
+  echo $port
+}
 
 # Emits "branch<TAB>path" lines to fzf, shows both columns, returns the path.
 _wt_pick() {
