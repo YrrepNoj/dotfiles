@@ -1,0 +1,14 @@
+# Portable Codex CLI settings, copied to ~/.codex/config.toml by the Lima
+# ai-sandbox bake. Keep machine-specific entries (project trust, plugins,
+# marketplaces, MCP servers, desktop app paths) out of this file: Codex
+# appends those to the live copy itself.
+
+model = "gpt-6.1-sol"
+personality = "pragmatic"
+model_reasoning_effort = "medium"
+
+[features]
+js_repl = false
+
+[tui]
+status_line = ["model-name", "current-dir", "git-branch", "context-remaining", "context-used", "five-hour-limit", "weekly-limit", "session-id"]

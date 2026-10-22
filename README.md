@@ -20,6 +20,11 @@ and pyenv settings honor existing environment overrides. Project aliases use
 (the path can be set with `AI_SANDBOX_YAML`). The custom Linux llama-swap alias
 is available only when its executable exists.
 
+`codex/config.toml` holds the portable Codex CLI settings (model, personality,
+reasoning effort, status line). Machine-specific entries such as project trust,
+plugins and MCP servers stay out of it; Codex writes those to the live
+`~/.codex/config.toml` itself.
+
 The merge removes the legacy yabai/skhd configuration and the old
 `shell/.tmux.conf` and `shell/.p10k.zsh` files. Use `aerospace/aerospace.toml`
 for AeroSpace on macOS and `tmux/tmux.conf` for tmux. A separate existing
