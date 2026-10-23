@@ -1,0 +1,398 @@
+# Git aliases and the gwt* worktree commands. Load after compinit (prompt.zsh),
+# which the completions at the bottom need.
+
+### Git
+alias gtree="git log --graph --oneline --all --decorate --color --abbrev-commit"
+
+# Emits "branch<TAB>path" lines to fzf, shows both columns, returns the path.
+# Any args are joined into the initial fzf query, which stays editable; the
+# menu always appears so a selection must be confirmed.
+_wt_pick() {
+  git rev-parse --is-inside-work-tree >/dev/null 2>&1 || {
+    echo "not inside a git repository" >&2
+    return 1
+  }
+  command -v fzf >/dev/null 2>&1 || {
+    echo "fzf not found — install it or use: git worktree list" >&2
+    return 1
+  }
+
+  local sel
+  sel=$(git worktree list --porcelain | awk '
+    function flush() {
+      if (path == "") return
+      label = (branch != "") ? branch \
+            : (bare ? "(bare)" : (det ? "(detached)" : "?"))
+      printf "%s\t%s\n", label, path
+    }
+    /^worktree / { flush(); path=substr($0, 10); branch=""; det=0; bare=0; next }
+    /^branch /   { branch=$2; sub("refs/heads/", "", branch); next }
+    /^detached/  { det=1; next }
+    /^bare/      { bare=1; next }
+    END          { flush() }
+  ' | fzf --height=40% --reverse --delimiter='\t' --with-nth=1,2 \
+          --query="$*")
+  [ -n "$sel" ] || return 1
+
+  # strip the "branch<TAB>" prefix, leaving just the path
+  printf '%s\n' "${sel#*$'\t'}"
+}
+
+# --- usage text for the gwt* commands ---------------------------------------
+# `gwt` prints all of these; `<cmd> -h` prints one.
+_gwt_usage() {
+  case "$1" in
+    gwtls) cat <<'USAGE'
+gwtls [git-worktree-list-args]   list worktrees
+USAGE
+    ;;
+    gwtcd) cat <<'USAGE'
+gwtcd [filter...]   pick a worktree and cd into it
+  filter   starting text for the fzf search (still editable)
+USAGE
+    ;;
+    gwtm) cat <<'USAGE'
+gwtm   cd to the main worktree
+USAGE
+    ;;
+    gwtadd) cat <<'USAGE'
+gwtadd [-n] <branch>   create a worktree at .worktrees/<branch> and cd into it
+  -n, --no-cd   don't cd into the new worktree
+  Uses the local branch if it exists, else tracks a remote branch of that
+  name, else creates a new branch from HEAD.
+USAGE
+    ;;
+    gwtrm) cat <<'USAGE'
+gwtrm [-f] [-b|-B] [filter...]   pick a worktree and remove it
+  -f, --force    remove even with modified/untracked files
+  -b, --branch   also delete its branch (only if merged)
+  -B             also delete its branch (even if unmerged)
+  filter         starting text for the fzf search (still editable)
+  Refuses to remove the worktree you're in.
+USAGE
+    ;;
+    gwtclean) cat <<'USAGE'
+gwtclean [-n] [-y] [-f] [base]   delete branches merged into base, and their worktrees
+  -n, --dry-run   only list what would be deleted
+  -y              don't ask for confirmation
+  -f, --force     also remove worktrees with modified/untracked/ignored files
+  base            branch to compare against (default: origin/main, fetched
+                  first; else main)
+  Merged = merging into base would change nothing (catches squash merges).
+  Never touches the main worktree, the one you're in, locked worktrees, or
+  ones with a rebase/merge/bisect in progress.
+USAGE
+    ;;
+  esac
+}
+
+# --- gwt: list the worktree commands ----------------------------------------
+unalias gwt 2>/dev/null
+gwt() {
+  local cmd
+  for cmd in gwtls gwtcd gwtm gwtadd gwtrm gwtclean; do
+    _gwt_usage $cmd
+    echo
+  done
+  echo "Run <command> -h for one command's help; Tab completes flags."
+}
+
+# --- gwtls: list worktrees --------------------------------------------------
+unalias gwtls 2>/dev/null
+gwtls() {
+  git worktree list "$@"
+}
+
+# --- gwtcd: jump to a worktree ----------------------------------------------
+gwtcd() {
+  case "$1" in -h|--help) _gwt_usage gwtcd; return ;; esac
+  local dir
+  dir=$(_wt_pick "$@") || return
+  [ -n "$dir" ] && cd "$dir"
+}
+
+# --- gwtm: jump to the main worktree ----------------------------------------
+# git always lists the main worktree first.
+gwtm() {
+  case "$1" in -h|--help) _gwt_usage gwtm; return ;; esac
+  local dir
+  dir=$(git worktree list --porcelain 2>/dev/null | awk '/^worktree /{print substr($0, 10); exit}')
+  [ -n "$dir" ] || { echo "gwtm: not inside a git repository" >&2; return 1; }
+  cd "$dir"
+}
+
+# --- gwtrm: remove a worktree -----------------------------------------------
+unalias gwtrm 2>/dev/null
+gwtrm() {
+  local force=0 del_branch="" arg
+  local -a query
+  for arg in "$@"; do
+    case "$arg" in
+      -f|--force)  force=1 ;;
+      -b|--branch) del_branch=-d ;;
+      -B)          del_branch=-D ;;
+      -h|--help)   _gwt_usage gwtrm; return ;;
+      -*)          echo "gwtrm: unknown flag: $arg" >&2; _gwt_usage gwtrm >&2; return 1 ;;
+      *)           query+=("$arg") ;;
+    esac
+  done
+
+  local dir
+  dir=$(_wt_pick "${query[@]}") || return
+  [ -n "$dir" ] || return
+
+  # block removal if PWD is the worktree root or anywhere inside it
+  case "$PWD/" in
+    "$dir"/*)
+      echo "gwtrm: you're inside $dir — cd out first (gwtm)" >&2
+      return 1
+      ;;
+  esac
+
+  local branch
+  branch=$(git -C "$dir" symbolic-ref --quiet --short HEAD 2>/dev/null)
+
+  local -a rm_args
+  [ "$force" -eq 1 ] && rm_args+=(--force)
+  if ! git worktree remove "${rm_args[@]}" "$dir"; then
+    [ "$force" -eq 0 ] && echo "gwtrm: retry with -f to force removal" >&2
+    return 1
+  fi
+  echo "removed $dir"
+
+  if [ -n "$del_branch" ]; then
+    if [ -z "$branch" ]; then
+      echo "gwtrm: worktree had no branch (detached); nothing to delete" >&2
+    elif ! git branch "$del_branch" "$branch"; then
+      [ "$del_branch" = -d ] && echo "gwtrm: use -B to delete the unmerged branch '$branch'" >&2
+      return 1
+    fi
+  fi
+}
+
+# --- gwtadd: create a worktree ---------------------------------------------
+gwtadd() {
+  local do_cd=1 branch="" arg
+  for arg in "$@"; do
+    case "$arg" in
+      --no-cd|-n) do_cd=0 ;;
+      -h|--help)  _gwt_usage gwtadd; return ;;
+      -*)         echo "gwtadd: unknown flag: $arg" >&2; _gwt_usage gwtadd >&2; return 1 ;;
+      *)          if [ -z "$branch" ]; then branch="$arg"
+                  else echo "gwtadd: too many arguments" >&2; return 1; fi ;;
+    esac
+  done
+  [ -n "$branch" ] || { _gwt_usage gwtadd >&2; return 1; }
+
+  local dest=".worktrees/$branch"
+
+  git rev-parse --is-inside-work-tree >/dev/null 2>&1 || {
+    echo "gwtadd: not inside a git repository" >&2; return 1; }
+
+  if [ -e "$dest" ]; then
+    echo "gwtadd: path already exists: $dest" >&2; return 1
+  fi
+
+  # does the branch already exist locally?
+  local has_local=0
+  git show-ref --verify --quiet "refs/heads/$branch" && has_local=1
+
+  # if not local, look for a remote-tracking match (origin first)
+  local remote="" r
+  if [ "$has_local" -eq 0 ]; then
+    for r in origin $(git remote | grep -v '^origin$'); do
+      if git show-ref --verify --quiet "refs/remotes/$r/$branch"; then
+        remote="$r"; break
+      fi
+    done
+  fi
+
+  local rc
+  if [ "$has_local" -eq 1 ]; then
+    echo "gwtadd: existing local branch '$branch' -> $dest"
+    git worktree add "$dest" "$branch"; rc=$?
+  elif [ -n "$remote" ]; then
+    echo "gwtadd: new branch '$branch' tracking '$remote/$branch' -> $dest"
+    git worktree add --track -b "$branch" "$dest" "$remote/$branch"; rc=$?
+  else
+    echo "gwtadd: new branch '$branch' from HEAD -> $dest"
+    echo "        (if you meant an un-fetched remote branch, git fetch first)"
+    git worktree add -b "$branch" "$dest"; rc=$?
+  fi
+
+  if [ "$rc" -eq 0 ] && [ "$do_cd" -eq 1 ]; then
+    cd "$dest"
+  fi
+  return $rc
+}
+
+# --- gwtclean: delete merged branches and their worktrees -------------------
+# Needs git >= 2.38 (merge-tree --write-tree).
+gwtclean() {
+  emulate -L zsh
+  local yes=0 force=0 dry=0 base="" arg
+  for arg in "$@"; do
+    case "$arg" in
+      -y) yes=1 ;;
+      -f|--force) force=1 ;;
+      -n|--dry-run) dry=1 ;;
+      -h|--help) _gwt_usage gwtclean; return ;;
+      -*) print -u2 "gwtclean: unknown flag: $arg"; _gwt_usage gwtclean >&2; return 1 ;;
+      *)  if [[ -z $base ]]; then base=$arg
+          else print -u2 "gwtclean: too many arguments"; return 1; fi ;;
+    esac
+  done
+
+  local current
+  current=$(command git rev-parse --show-toplevel 2>/dev/null) || {
+    print -u2 "gwtclean: not inside a git repository"; return 1; }
+
+  if [[ -z $base ]]; then
+    if command git show-ref --verify --quiet refs/remotes/origin/main; then
+      command git fetch --quiet origin '+refs/heads/main:refs/remotes/origin/main' || {
+        print -u2 "gwtclean: fetch of origin/main failed"; return 1; }
+      base=origin/main
+    else
+      base=main
+    fi
+  fi
+  local target tree
+  target=$(command git rev-parse --verify --quiet "$base^{commit}") || {
+    print -u2 "gwtclean: unknown base: $base"; return 1; }
+  tree=$(command git rev-parse "$target^{tree}") || return 1
+  command git merge-tree --write-tree "$target" "$target" >/dev/null 2>&1 || {
+    print -u2 "gwtclean: needs git >= 2.38 (merge-tree --write-tree)"; return 1; }
+
+  # the first worktree listed is the main one
+  local inventory primary
+  inventory=$(command git worktree list --porcelain -z) || return 1
+  primary=${${(0)inventory}[1]#worktree }
+
+  local -a doomed skipped
+  local -A tip_of wt_of
+  local ref b tip merged wt op state dirty
+  for ref in ${(f)"$(command git for-each-ref --format='%(refname)' refs/heads/)"}; do
+    b=${ref#refs/heads/}
+    [[ $b == ${base#*/} ]] && continue
+    tip=$(command git rev-parse "$ref") || return 1
+    merged=$(command git merge-tree --write-tree "$target" "$tip" 2>/dev/null) || continue
+    [[ $merged == $tree ]] || continue
+
+    wt=$(command git for-each-ref --format='%(worktreepath)' "$ref") || return 1
+    if [[ -n $wt ]]; then
+      [[ ${wt:A} == ${current:A} || ${wt:A} == ${primary:A} ]] && continue
+      if [[ ! -d $wt ]]; then
+        skipped+=("$b  (worktree missing: $wt — run git worktree prune)")
+        continue
+      fi
+      for op in locked rebase-merge rebase-apply MERGE_HEAD CHERRY_PICK_HEAD \
+                REVERT_HEAD sequencer BISECT_START; do
+        state=$(command git -C "$wt" rev-parse --path-format=absolute --git-path "$op") || return 1
+        if [[ -e $state ]]; then
+          if [[ $op == locked ]]; then
+            skipped+=("$b  (worktree is locked: $wt)")
+          else
+            skipped+=("$b  (worktree has a git operation in progress, $op: $wt)")
+          fi
+          continue 2
+        fi
+      done
+      if (( ! force )); then
+        dirty=$(command git -C "$wt" status --porcelain --untracked-files=all \
+                --ignored --ignore-submodules=none) || return 1
+        if [[ -n $dirty ]]; then
+          skipped+=("$b  (worktree has changed/untracked/ignored files, -f to remove: $wt)")
+          continue
+        fi
+      fi
+    fi
+    doomed+=("$b")
+    tip_of[$b]=$tip
+    wt_of[$b]=$wt
+  done
+
+  if (( ${#skipped} )); then
+    print "skipped:"
+    print -rl -- "  "${^skipped}
+  fi
+  if (( ! ${#doomed} )); then
+    print "gwtclean: nothing to delete (base: $base)"
+    return 0
+  fi
+
+  print "merged into $base:"
+  for b in $doomed; do
+    if [[ -n ${wt_of[$b]} ]]; then
+      print -r -- "  $b  (worktree: ${wt_of[$b]})"
+    else
+      print -r -- "  $b"
+    fi
+  done
+
+  (( dry )) && return 0
+  if (( ! yes )); then
+    read -q "?delete these? [y/N] " || { print; return 1; }
+    print
+  fi
+
+  local -a rm_args
+  (( force )) && rm_args=(--force)
+  local failed=0
+  for b in $doomed; do
+    if [[ $(command git rev-parse "refs/heads/$b") != ${tip_of[$b]} ]]; then
+      print -u2 "gwtclean: kept $b (branch moved since check)"
+      failed=1; continue
+    fi
+    wt=${wt_of[$b]}
+    if [[ -n $wt ]]; then
+      command git worktree remove $rm_args -- "$wt" || { failed=1; continue; }
+      print -r -- "removed worktree $wt"
+    fi
+    command git branch -D -- "$b" || failed=1
+  done
+  return $failed
+}
+
+# --- tab completion for the gwt* commands -----------------------------------
+# branch names that have a worktree, for the fzf filter argument
+_gwt_wt_branches() {
+  local -a names
+  names=(${${(M)${(f)"$(git worktree list --porcelain 2>/dev/null)"}:#branch *}#branch refs/heads/})
+  _describe 'worktree branch' names
+}
+_gwt_branches() {
+  local -a names
+  names=(${(f)"$(git for-each-ref --format='%(refname:short)' refs/heads refs/remotes 2>/dev/null)"})
+  _describe 'branch' names
+}
+_gwtcd()    { _arguments '(-)'{-h,--help}'[show help]' '*:filter:_gwt_wt_branches' }
+_gwtm()     { _arguments '(-)'{-h,--help}'[show help]' }
+_gwtrm() {
+  _arguments \
+    '(-)'{-h,--help}'[show help]' \
+    '(-f --force)'{-f,--force}'[remove even with modified/untracked files]' \
+    '(-b --branch -B)'{-b,--branch}'[also delete its branch (only if merged)]' \
+    '(-b --branch -B)-B[also delete its branch (even if unmerged)]' \
+    '*:filter:_gwt_wt_branches'
+}
+_gwtadd() {
+  _arguments \
+    '(-)'{-h,--help}'[show help]' \
+    '(-n --no-cd)'{-n,--no-cd}"[don't cd into the new worktree]" \
+    '1:branch:_gwt_branches'
+}
+_gwtclean() {
+  _arguments \
+    '(-)'{-h,--help}'[show help]' \
+    '(-n --dry-run)'{-n,--dry-run}'[only list what would be deleted]' \
+    "-y[don't ask for confirmation]" \
+    '(-f --force)'{-f,--force}'[also remove worktrees with modified/untracked/ignored files]' \
+    '1:base branch:_gwt_branches'
+}
+if (( $+functions[compdef] )); then
+  compdef _gwtcd gwtcd
+  compdef _gwtm gwtm
+  compdef _gwtrm gwtrm
+  compdef _gwtadd gwtadd
+  compdef _gwtclean gwtclean
+fi
