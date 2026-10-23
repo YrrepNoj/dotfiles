@@ -14,7 +14,7 @@ them from your own files. Both startup files load the shared environment
 | `tools.zsh` | nvm, pyenv, kubectl completion. |
 | `aliases.zsh` | Kubernetes, Docker, notification, terminal and editor helpers. |
 | `git.zsh` | `gtree` and the `gwt*` worktree commands with completion. |
-| `lima.zsh` | Sources the Lima AI sandbox helpers from the work-automtaion repo when `limactl` is installed. |
+| `lima.zsh` | Lima AI sandbox helpers (`ai-sandbox-bake`, `ai-sandbox-clone`, `ai-sandbox`, `ai-sandbox-baton`), defined only when `limactl` is installed. |
 
 The Lima AI sandbox VM clones this repo to `~/.dotfiles` and sources
 `shell/zshrc` from its own `~/.zshrc`.
@@ -24,9 +24,9 @@ Oh My Zsh plugins, nvm, and pyenv load when installed. The prompt uses
 oh-my-posh with `ohmyposh/powerlevel10k_lean.omp.json` when `oh-my-posh` is
 installed, and falls back to `robbyrussell` otherwise. Go, pnpm, and pyenv
 settings honor existing environment overrides. Lima helpers require `limactl`
-and the work-automtaion checkout (the template path can be set with
-`AI_SANDBOX_YAML`). The custom Linux llama-swap alias is available only when
-its executable exists.
+and the sandbox template from the work-automtaion checkout (the path can be
+set with `AI_SANDBOX_YAML`). The custom Linux llama-swap alias is available
+only when its executable exists.
 
 `codex/config.toml` holds the portable Codex CLI settings (model, personality,
 reasoning effort, status line). Machine-specific entries such as project trust,
